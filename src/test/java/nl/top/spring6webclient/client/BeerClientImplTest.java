@@ -1,11 +1,13 @@
 package nl.top.spring6webclient.client;
 
 import nl.top.spring6webclient.domain.BeerStyle;
+import nl.top.spring6webclient.model.BeerDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -91,12 +93,34 @@ class BeerClientImplTest {
     void getBeerByBeerStyle() {
         AtomicBoolean completed = new AtomicBoolean(false);
         beerClient.getBeerByBeerStyle(BeerStyle.PALE_ALE)
-                        .subscribe(foundBeer -> {
-                            System.out.println(foundBeer);
-                            assertThat(foundBeer).isNotNull();
-                            assertThat(foundBeer.beerStyle()).isNotEqualByComparingTo(BeerStyle.IPA);
-                            completed.set(true);
-                        });
+                .subscribe(foundBeer -> {
+                    System.out.println(foundBeer);
+                    assertThat(foundBeer).isNotNull();
+                    assertThat(foundBeer.beerStyle()).isNotEqualByComparingTo(BeerStyle.IPA);
+                    completed.set(true);
+                });
+        await().untilTrue(completed);
+    }
+
+    @Test
+    @DisplayName("Test create new beer and add to DB")
+    void createNewBeer() {
+        AtomicBoolean completed = new AtomicBoolean(false);
+
+        BeerDTO newBeerDTO = BeerDTO.builder()
+                .price(new BigDecimal("10.99"))
+                .beerName("Mango Bobs")
+                .beerStyle(BeerStyle.GOSE)
+                .quantityOnHand(500)
+                .upc("12344")
+                .build();
+
+        beerClient.createBeer(newBeerDTO)
+                .subscribe(beerDTO -> {
+                    System.out.println(beerDTO.toString());
+                    assertThat(beerDTO.beerName()).isEqualTo(newBeerDTO.beerName());
+                    completed.set(true);
+                });
         await().untilTrue(completed);
     }
 }
