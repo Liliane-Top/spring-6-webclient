@@ -1,6 +1,7 @@
 package nl.top.spring6webclient.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import nl.top.spring6webclient.domain.BeerStyle;
 import nl.top.spring6webclient.model.BeerDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -51,5 +52,16 @@ public class BeerClientImpl implements BeerClient {
                 .uri(uriBuilder -> uriBuilder.path(BEER_PATH_ID).build(id))
                 .retrieve()
                 .bodyToMono(BeerDTO.class);
+    }
+
+    @Override
+    public Flux<BeerDTO> getBeerByBeerStyle(BeerStyle beerStyle) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path(BEER_PATH)
+                        .queryParam("beerStyle", beerStyle)
+                        .build())
+                .retrieve()
+                .bodyToFlux(BeerDTO.class);
     }
 }

@@ -1,5 +1,6 @@
 package nl.top.spring6webclient.client;
 
+import nl.top.spring6webclient.domain.BeerStyle;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,6 +83,20 @@ class BeerClientImplTest {
                     assertThat(foundBeer.beerStyle()).isNotNull();
                     completed.set(true);
                 });
+        await().untilTrue(completed);
+    }
+
+    @Test
+    @DisplayName("Test get all beers by beerStyle")
+    void getBeerByBeerStyle() {
+        AtomicBoolean completed = new AtomicBoolean(false);
+        beerClient.getBeerByBeerStyle(BeerStyle.PALE_ALE)
+                        .subscribe(foundBeer -> {
+                            System.out.println(foundBeer);
+                            assertThat(foundBeer).isNotNull();
+                            assertThat(foundBeer.beerStyle()).isNotEqualByComparingTo(BeerStyle.IPA);
+                            completed.set(true);
+                        });
         await().untilTrue(completed);
     }
 }
