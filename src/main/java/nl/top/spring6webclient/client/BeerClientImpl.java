@@ -15,7 +15,7 @@ public class BeerClientImpl implements BeerClient {
     public static final String BEER_PATH = "/api/v3/beer";
 
     public BeerClientImpl(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl("http://localhost:8080").build();
+        this.webClient = webClientBuilder.build();
     }
 
     @Override
