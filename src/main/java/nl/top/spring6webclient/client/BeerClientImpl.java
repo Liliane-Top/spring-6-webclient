@@ -1,5 +1,7 @@
 package nl.top.spring6webclient.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import nl.top.spring6webclient.model.BeerDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -13,7 +15,7 @@ public class BeerClientImpl implements BeerClient {
     public static final String BEER_PATH = "/api/v3/beer";
 
     public BeerClientImpl(WebClient.Builder webClientBuilder) {
-        this.webClient = WebClient.builder().baseUrl("http://localhost:8080").build();
+        this.webClient = webClientBuilder.baseUrl("http://localhost:8080").build();
     }
 
     @Override
@@ -26,5 +28,17 @@ public class BeerClientImpl implements BeerClient {
     public Flux<Map> getBeerMap() {
         return webClient.get().uri(BEER_PATH)
                 .retrieve().bodyToFlux(Map.class);
+    }
+
+    @Override
+    public Flux<JsonNode> getBeerJSON() {
+        return webClient.get().uri(BEER_PATH)
+                .retrieve().bodyToFlux(JsonNode.class);
+    }
+
+    @Override
+    public Flux<BeerDTO> getBeerDTO() {
+        return webClient.get().uri(BEER_PATH)
+                .retrieve().bodyToFlux(BeerDTO.class);
     }
 }

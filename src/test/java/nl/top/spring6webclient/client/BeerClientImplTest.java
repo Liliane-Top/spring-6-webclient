@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,6 +40,29 @@ class BeerClientImplTest {
             System.out.println(response);
             System.out.println(response.keySet());
             assertThat(response.keySet().size()).isEqualTo(8);
+            completed.set(true);
+        });
+        await().untilTrue(completed);
+    }
+    @Test
+    @DisplayName("Test get list of all beers as a JSON")
+    void getBeerJSON() {
+        AtomicBoolean completed = new AtomicBoolean(false);
+        beerClient.getBeerJSON().subscribe(response -> {
+//            System.out.println(response.toPrettyString());
+            assertThat(response.toPrettyString()).contains("beerName",  "quantityOnHand");
+            assertThat(response.size()).isGreaterThan(2);
+            completed.set(true);
+        });
+        await().untilTrue(completed);
+    }
+    @Test
+    @DisplayName("Test get list of all beers as a JSON")
+    void getBeerDTO() {
+        AtomicBoolean completed = new AtomicBoolean(false);
+        beerClient.getBeerDTO().subscribe(beerDTO -> {
+            System.out.println(beerDTO.beerName());
+            assertThat(beerDTO.beerName()).isNotNull();
             completed.set(true);
         });
         await().untilTrue(completed);
