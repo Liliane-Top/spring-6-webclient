@@ -1,7 +1,6 @@
 package nl.top.spring6webclient.model;
 
 import lombok.Builder;
-import lombok.Value;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

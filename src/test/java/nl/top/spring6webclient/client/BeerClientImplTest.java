@@ -4,10 +4,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import reactor.core.publisher.Mono;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -44,20 +42,22 @@ class BeerClientImplTest {
         });
         await().untilTrue(completed);
     }
+
     @Test
     @DisplayName("Test get list of all beers as a JSON")
     void getBeerJSON() {
         AtomicBoolean completed = new AtomicBoolean(false);
         beerClient.getBeerJSON().subscribe(response -> {
 //            System.out.println(response.toPrettyString());
-            assertThat(response.toPrettyString()).contains("beerName",  "quantityOnHand");
+            assertThat(response.toPrettyString()).contains("beerName", "quantityOnHand");
             assertThat(response.size()).isGreaterThan(2);
             completed.set(true);
         });
         await().untilTrue(completed);
     }
+
     @Test
-    @DisplayName("Test get list of all beers as a JSON")
+    @DisplayName("Test get list of all beers as a POJO/BeerDTO")
     void getBeerDTO() {
         AtomicBoolean completed = new AtomicBoolean(false);
         beerClient.getBeerDTO().subscribe(beerDTO -> {
@@ -65,6 +65,23 @@ class BeerClientImplTest {
             assertThat(beerDTO.beerName()).isNotNull();
             completed.set(true);
         });
+        await().untilTrue(completed);
+    }
+
+    @Test
+    @DisplayName("Test get a beer by ID")
+    void getBeerById() {
+        AtomicBoolean completed = new AtomicBoolean(false);
+        beerClient.getBeerDTO()
+                .flatMap(beerDTO -> {
+                    System.out.println(beerDTO);
+                    return beerClient.getBeerById(beerDTO.id());
+                })
+                .subscribe(foundBeer -> {
+                    System.out.println(foundBeer.beerName());
+                    assertThat(foundBeer.beerStyle()).isNotNull();
+                    completed.set(true);
+                });
         await().untilTrue(completed);
     }
 }
