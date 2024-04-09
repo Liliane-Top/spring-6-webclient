@@ -26,7 +26,7 @@ class BeerClientImplTest {
 
         beerClient.getBeerString().subscribe(response -> {
             System.out.println(response);
-            assertThat(response.contains("Crank"));
+            assertThat(response).contains("Crank");
             completed.set(true);
         });
 
@@ -64,8 +64,8 @@ class BeerClientImplTest {
     void getBeerDTO() {
         AtomicBoolean completed = new AtomicBoolean(false);
         beerClient.getBeerDTO().subscribe(beerDTO -> {
-            System.out.println(beerDTO.beerName());
-            assertThat(beerDTO.beerName()).isNotNull();
+            System.out.println(beerDTO.getBeerName());
+            assertThat(beerDTO.getBeerName()).isNotNull();
             completed.set(true);
         });
         await().untilTrue(completed);
@@ -78,11 +78,11 @@ class BeerClientImplTest {
         beerClient.getBeerDTO()
                 .flatMap(beerDTO -> {
                     System.out.println(beerDTO);
-                    return beerClient.getBeerById(beerDTO.id());
+                    return beerClient.getBeerById(beerDTO.getId());
                 })
                 .subscribe(foundBeer -> {
-                    System.out.println(foundBeer.beerName());
-                    assertThat(foundBeer.beerStyle()).isNotNull();
+                    System.out.println(foundBeer.getBeerName());
+                    assertThat(foundBeer.getBeerStyle()).isNotNull();
                     completed.set(true);
                 });
         await().untilTrue(completed);
@@ -96,7 +96,7 @@ class BeerClientImplTest {
                 .subscribe(foundBeer -> {
                     System.out.println(foundBeer);
                     assertThat(foundBeer).isNotNull();
-                    assertThat(foundBeer.beerStyle()).isNotEqualByComparingTo(BeerStyle.IPA);
+                    assertThat(foundBeer.getBeerStyle()).isNotEqualByComparingTo(BeerStyle.IPA);
                     completed.set(true);
                 });
         await().untilTrue(completed);
@@ -118,9 +118,29 @@ class BeerClientImplTest {
         beerClient.createBeer(newBeerDTO)
                 .subscribe(beerDTO -> {
                     System.out.println(beerDTO.toString());
-                    assertThat(beerDTO.beerName()).isEqualTo(newBeerDTO.beerName());
+                    assertThat(beerDTO.getBeerName()).isEqualTo(newBeerDTO.getBeerName());
                     completed.set(true);
                 });
+        await().untilTrue(completed);
+    }
+
+    @Test
+    @DisplayName("Test to update a beer")
+    void updateBeer() {
+        final String NAME = "Blond biertje";
+
+        AtomicBoolean completed = new AtomicBoolean(false);
+
+        beerClient.getBeerDTO()
+                .next()
+                .doOnNext(beerDTO -> beerDTO.setBeerName(NAME))
+                .flatMap(beerDTO -> beerClient.updateBeerById(beerDTO))
+                .subscribe(updatedBeer -> {
+                    System.out.println(updatedBeer);
+                    assertThat(updatedBeer.getBeerName()).isEqualTo(NAME);
+                    completed.set(true);
+                });
+
         await().untilTrue(completed);
     }
 }
