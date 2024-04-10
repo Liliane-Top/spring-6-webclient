@@ -102,6 +102,7 @@ public class BeerClientImpl implements BeerClient {
 
     @Override
     public Mono<Void> deleteBeerById(String id) {
+        //can't use subscribe as it doesn't return anything
         return webClient.delete()
                 .uri(uriBuilder -> uriBuilder.path(BEER_PATH_ID).build(id))
                 .retrieve()

@@ -144,14 +144,19 @@ class BeerClientImplTest {
     @DisplayName("Test to patch a beer by Id")
     void patchBeer() {
         final BeerStyle BEERSTYLE = BeerStyle.LAGER;
+        final String newBeerName = "Amstelbrier";
 
         AtomicBoolean completed = new AtomicBoolean(false);
 
         beerClient.getBeerDTO().next()
-                .doOnNext(beerDTO -> beerDTO.setBeerStyle(BEERSTYLE))
+                .doOnNext(beerDTO -> {
+                    beerDTO.setBeerStyle(BEERSTYLE);
+                    beerDTO.setBeerName(newBeerName);
+                })
                 .flatMap(beerDTO -> beerClient.patchBeerById(beerDTO))
                 .subscribe(patchedBeer -> {
                     assertThat(patchedBeer.getBeerStyle()).isEqualTo(BEERSTYLE);
+                    assertThat(patchedBeer.getBeerName()).isEqualTo(newBeerName);
                     completed.set(true);
                 });
 
@@ -169,5 +174,20 @@ class BeerClientImplTest {
                     beerClient.getBeerById(beerToDeleteId).block();
 
                 }).isInstanceOf(WebClientResponseException.class);
+    }
+
+    @Test
+    @DisplayName("Test delete beer by Id alternative way")
+    void deleteBeerByIdAlternative() {
+        AtomicBoolean completed = new AtomicBoolean(false);
+
+        beerClient.getBeerDTO()
+                .next()
+                .flatMap(beerDTO -> beerClient.deleteBeerById(beerDTO.getId()))
+                .doOnSuccess(succes -> completed.set(true))
+                .subscribe();
+
+        await().untilTrue(completed);
+
     }
 }
