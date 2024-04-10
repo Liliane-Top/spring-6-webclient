@@ -2,24 +2,27 @@ package nl.top.spring6webclient.client;
 
 import nl.top.spring6webclient.domain.BeerStyle;
 import nl.top.spring6webclient.model.BeerDTO;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class BeerClientImplTest {
 
     @Autowired
     BeerClient beerClient;
 
     @Test
+    @Order(1)
     @DisplayName("Test get list of all beers as a String")
     void listBeer() {
         AtomicBoolean completed = new AtomicBoolean(false);
@@ -76,12 +79,8 @@ class BeerClientImplTest {
     void getBeerById() {
         AtomicBoolean completed = new AtomicBoolean(false);
         beerClient.getBeerDTO()
-                .flatMap(beerDTO -> {
-                    System.out.println(beerDTO);
-                    return beerClient.getBeerById(beerDTO.getId());
-                })
+                .flatMap(beerDTO -> beerClient.getBeerById(beerDTO.getId()))
                 .subscribe(foundBeer -> {
-                    System.out.println(foundBeer.getBeerName());
                     assertThat(foundBeer.getBeerStyle()).isNotNull();
                     completed.set(true);
                 });
@@ -94,7 +93,6 @@ class BeerClientImplTest {
         AtomicBoolean completed = new AtomicBoolean(false);
         beerClient.getBeerByBeerStyle(BeerStyle.PALE_ALE)
                 .subscribe(foundBeer -> {
-                    System.out.println(foundBeer);
                     assertThat(foundBeer).isNotNull();
                     assertThat(foundBeer.getBeerStyle()).isNotEqualByComparingTo(BeerStyle.IPA);
                     completed.set(true);
@@ -117,7 +115,6 @@ class BeerClientImplTest {
 
         beerClient.createBeer(newBeerDTO)
                 .subscribe(beerDTO -> {
-                    System.out.println(beerDTO.toString());
                     assertThat(beerDTO.getBeerName()).isEqualTo(newBeerDTO.getBeerName());
                     completed.set(true);
                 });
@@ -125,7 +122,7 @@ class BeerClientImplTest {
     }
 
     @Test
-    @DisplayName("Test to update a beer")
+    @DisplayName("Test to update a beer by Id")
     void updateBeer() {
         final String NAME = "Blond biertje";
 
@@ -136,11 +133,41 @@ class BeerClientImplTest {
                 .doOnNext(beerDTO -> beerDTO.setBeerName(NAME))
                 .flatMap(beerDTO -> beerClient.updateBeerById(beerDTO))
                 .subscribe(updatedBeer -> {
-                    System.out.println(updatedBeer);
                     assertThat(updatedBeer.getBeerName()).isEqualTo(NAME);
                     completed.set(true);
                 });
 
         await().untilTrue(completed);
+    }
+
+    @Test
+    @DisplayName("Test to patch a beer by Id")
+    void patchBeer() {
+        final BeerStyle BEERSTYLE = BeerStyle.LAGER;
+
+        AtomicBoolean completed = new AtomicBoolean(false);
+
+        beerClient.getBeerDTO().next()
+                .doOnNext(beerDTO -> beerDTO.setBeerStyle(BEERSTYLE))
+                .flatMap(beerDTO -> beerClient.patchBeerById(beerDTO))
+                .subscribe(patchedBeer -> {
+                    assertThat(patchedBeer.getBeerStyle()).isEqualTo(BEERSTYLE);
+                    completed.set(true);
+                });
+
+        await().untilTrue(completed);
+    }
+
+    @Test
+    @DisplayName("Test delete beer by Id")
+    void deleteBeerById() {
+        BeerDTO beerToDelete = beerClient.getBeerDTO().blockFirst();
+        assertThat(beerToDelete).isNotNull();
+        String beerToDeleteId = beerToDelete.getId();
+        beerClient.deleteBeerById(beerToDeleteId).block();
+        assertThatThrownBy(() -> {
+                    beerClient.getBeerById(beerToDeleteId).block();
+
+                }).isInstanceOf(WebClientResponseException.class);
     }
 }
